@@ -202,6 +202,73 @@
     color:var(--ink-soft);
     margin-top:14px;
   }
+  .tab-nav{
+    margin-bottom:36px;
+  }
+  .tab-panel{
+    display:none;
+  }
+  .tab-panel.active{
+    display:block;
+  }
+  .pay-hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 24px;
+    margin-bottom:32px;
+  }
+  .pay-hero .label{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .pay-hero .num{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:26px;
+  }
+  .pay-hero .num .over{
+    color:#A8412F;
+  }
+  .packet-row{
+    padding:14px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .packet-row:last-child{border-bottom:none;}
+  .packet-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:8px;
+  }
+  .packet-top label{font-size:14.5px;}
+  .packet-top .amt{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-variant-numeric:tabular-nums;
+  }
+  .packet-slider{display:flex;align-items:center;gap:10px;}
+  .packet-slider input[type="range"]{flex:1 1 auto;}
+  .packet-slider input[type="range"]:disabled{opacity:0.35;}
+  .lock-btn{
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+    padding:2px;
+    opacity:0.55;
+  }
+  .lock-btn.locked{opacity:1;}
+  .packet-pct{
+    font-size:12px;
+    color:var(--ink-soft);
+    min-width:38px;
+    text-align:right;
+  }
   footer{
     border-top:1px solid var(--line);
     padding-top:20px;
@@ -222,6 +289,13 @@
     <h1>Retirement Ledger</h1>
     <p>A running account of what retirement costs, in tomorrow's dollars, and what that means for the amount set aside each month.</p>
   </header>
+
+  <div class="tab-nav toggle">
+    <button id="tab-btn-retirement" class="active">Retirement</button>
+    <button id="tab-btn-spend">Spend planning</button>
+  </div>
+
+  <div id="tab-retirement" class="tab-panel active">
 
   <section>
     <h2>Assumptions</h2>
@@ -255,8 +329,8 @@
     <div class="row">
       <label for="multiple">Retirement target multiple</label>
       <div class="control">
-        <input type="range" id="multiple" min="15" max="25" step="1" value="20">
-        <span class="val" id="multiple-val">20×</span>
+        <input type="range" id="multiple" min="15" max="25" step="1" value="15">
+        <span class="val" id="multiple-val">15×</span>
       </div>
     </div>
   </section>
@@ -339,6 +413,39 @@
     </div>
     <p class="note">$2,500/year ($208/month) is the contribution that draws the full Canada Education Savings Grant. Anything beyond that is better placed in a TFSA or non-registered account — there's no additional grant past this amount.</p>
   </section>
+
+  </div>
+
+  <div id="tab-spend" class="tab-panel">
+
+  <div class="pay-hero">
+    <div>
+      <div class="label">Bi-weekly pay</div>
+      <div class="num" id="pay-total">$2,584.69</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="label">Allocated</div>
+      <div class="num" id="pay-allocated">$2,584.69</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Packets</h2>
+    <div id="packet-list"></div>
+    <p class="note">Drag any packet and the rest resize to match — the total always stays at your bi-weekly pay. RRSP, TFSA, RPP, RESP, and Rent are locked. Car insurance and car lease/finance are set to $0. That freed budget went to Debt repayment ($300/pay), Groceries, Transport, and Utilities. Fuel, Guitar, and Python class remain in, converted to bi-weekly. Total is balanced at $2,584.69.</p>
+  </section>
+
+  <section>
+    <h2>By the month</h2>
+    <table>
+      <thead>
+        <tr><th>Packet</th><th>Per pay</th><th>Per month</th><th>Per year</th></tr>
+      </thead>
+      <tbody id="packet-table-body"></tbody>
+    </table>
+  </section>
+
+  </div>
 
   <footer>
     All figures are nominal (future) dollars unless stated otherwise, and assume steady contributions and a constant rate of return — real markets don't move in a straight line. Treat this as a planning sketch, not a guarantee.
@@ -453,6 +560,144 @@ function drawChart(monthly, returnRate, years, target){
 });
 
 computeAll();
+
+// ---- Tabs ----
+const tabRetBtn = document.getElementById('tab-btn-retirement');
+const tabSpendBtn = document.getElementById('tab-btn-spend');
+tabRetBtn.addEventListener('click', () => switchTab('retirement'));
+tabSpendBtn.addEventListener('click', () => switchTab('spend'));
+function switchTab(name){
+  document.getElementById('tab-retirement').classList.toggle('active', name==='retirement');
+  document.getElementById('tab-spend').classList.toggle('active', name==='spend');
+  tabRetBtn.classList.toggle('active', name==='retirement');
+  tabSpendBtn.classList.toggle('active', name==='spend');
+}
+
+// ---- Spend planning ----
+const PAY_TOTAL = 2584.69;
+let packets = [
+  {id:'housing',    label:'Rent / housing',           value:900.00, locked:true},
+  {id:'debt',       label:'Debt repayment',           value:300.00, locked:false},
+  {id:'emergency',  label:'Emergency fund',           value:0.00,   locked:false},
+  {id:'rrsp',       label:'RRSP',                     value:351.60, locked:true},
+  {id:'tfsa',       label:'TFSA',                     value:351.60, locked:true},
+  {id:'rpp',        label:'RPP (pension plan)',       value:175.80, locked:true},
+  {id:'groceries',  label:'Groceries',                value:150.00, locked:false},
+  {id:'transport',  label:'Transportation',           value:40.00,  locked:false},
+  {id:'utilities',  label:'Utilities (electricity/gas)', value:40.00, locked:false},
+  {id:'phone',      label:'Phone',                    value:18.00,  locked:false},
+  {id:'internet',   label:'Internet',                 value:23.47,  locked:false},
+  {id:'insurance',  label:'Car insurance',            value:0.00,   locked:false},
+  {id:'resp',       label:'RESP (future child)',      value:74.66,  locked:true},
+  {id:'car',        label:'Car lease/finance',        value:0.00,   locked:false},
+  {id:'fuel',       label:'Fuel (RAV4 Hybrid, est.)', value:65.00,  locked:false},
+  {id:'guitar',     label:'Guitar class',             value:16.79,  locked:false},
+  {id:'python',     label:'Python class',             value:69.23,  locked:false},
+  {id:'fun',        label:'Discretionary / fun',      value:8.54,   locked:false},
+];
+
+function packetSum(){
+  return packets.reduce((s,p) => s + p.value, 0);
+}
+
+function redistribute(changedId, newValue){
+  const changed = packets.find(p => p.id === changedId);
+  if(changed.locked) return; // locked packets never move
+
+  const lockedSum = packets.filter(p => p.locked).reduce((s,p) => s + p.value, 0);
+  const maxForChanged = PAY_TOTAL - lockedSum;
+  newValue = Math.max(0, Math.min(maxForChanged, newValue));
+  const old = changed.value;
+  let delta = newValue - old;
+  changed.value = newValue;
+
+  const others = packets.filter(p => p.id !== changedId && !p.locked);
+  let othersSum = others.reduce((s,p) => s + p.value, 0);
+
+  if(othersSum <= 0.0001){
+    changed.value = maxForChanged;
+    others.forEach(p => p.value = 0);
+    return;
+  }
+
+  // amount that must be removed from (or returned to) the others, in total
+  let remaining = -delta;
+  others.forEach(p => {
+    const share = p.value / othersSum;
+    p.value = Math.max(0, p.value + remaining * share);
+  });
+
+  // if clamping to 0 caused drift, do one more corrective pass
+  let drift = maxForChanged + lockedSum - packetSum();
+  if(Math.abs(drift) > 0.005){
+    const adjustable = others.filter(p => p.value > 0.005 || drift > 0);
+    const adjSum = adjustable.reduce((s,p) => s + p.value, 0) || adjustable.length;
+    adjustable.forEach(p => {
+      const share = adjSum ? (p.value / adjSum || 1/adjustable.length) : 0;
+      p.value = Math.max(0, p.value + drift * share);
+    });
+  }
+}
+
+function renderPackets(){
+  const list = document.getElementById('packet-list');
+  const tbody = document.getElementById('packet-table-body');
+  list.innerHTML = '';
+  tbody.innerHTML = '';
+
+  packets.forEach(p => {
+    const pct = (p.value / PAY_TOTAL * 100);
+
+    const row = document.createElement('div');
+    row.className = 'packet-row';
+    row.innerHTML =
+      '<div class="packet-top">' +
+        '<label for="packet-'+p.id+'">'+p.label+'</label>' +
+        '<span class="amt">'+fmt(p.value)+'</span>' +
+      '</div>' +
+      '<div class="packet-slider">' +
+        '<button class="lock-btn'+(p.locked?' locked':'')+'" data-id="'+p.id+'" title="'+(p.locked?'Unlock':'Lock')+' this packet">'+(p.locked?'🔒':'🔓')+'</button>' +
+        '<input type="range" id="packet-'+p.id+'" min="0" max="'+PAY_TOTAL.toFixed(2)+'" step="1" value="'+p.value.toFixed(2)+'"'+(p.locked?' disabled':'')+'>' +
+        '<span class="packet-pct">'+pct.toFixed(0)+'%</span>' +
+      '</div>';
+    list.appendChild(row);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="text-align:left;">'+p.label+(p.locked?' 🔒':'')+'</td>' +
+      '<td>'+fmt(p.value)+'</td>' +
+      '<td>'+fmt(p.value * 26 / 12)+'</td>' +
+      '<td>'+fmt(p.value * 26)+'</td>';
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('pay-allocated').innerHTML = fmt(packetSum());
+  const allocEl = document.getElementById('pay-allocated');
+  const over = packetSum() - PAY_TOTAL;
+  if(over > 0.01){
+    allocEl.innerHTML = fmt(packetSum()) + '<br><span class="over" style="font-size:13px;">over by ' + fmt(over) + '</span>';
+  } else {
+    allocEl.innerHTML = fmt(packetSum());
+  }
+
+  packets.forEach(p => {
+    document.getElementById('packet-'+p.id).addEventListener('input', (e) => {
+      redistribute(p.id, parseFloat(e.target.value));
+      renderPackets();
+    });
+  });
+
+  document.querySelectorAll('.lock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = packets.find(pk => pk.id === btn.dataset.id);
+      p.locked = !p.locked;
+      renderPackets();
+    });
+  });
+}
+
+document.getElementById('pay-total').textContent = fmt(PAY_TOTAL);
+renderPackets();
 </script>
 </body>
 </html>
