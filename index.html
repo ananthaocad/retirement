@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E7E2D4;
+    --paper-2:#DED8C7;
+    --ink:#1C2B39;
+    --ink-soft:#48586A;
+    --line:#C7BFA9;
+    --brass:#9C7A2E;
+    --teal:#2F5D5C;
+    --teal-soft:#e2ece9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:56px 24px 96px;
+  }
+  header{
+    border-bottom:1px solid var(--line);
+    padding-bottom:28px;
+    margin-bottom:40px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:500;
+    font-size:clamp(32px, 6vw, 44px);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    max-width:52ch;
+    color:var(--ink-soft);
+    font-size:15px;
+  }
+  section{
+    margin-bottom:44px;
+  }
+  h2{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+    margin:0 0 18px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .row:last-child{border-bottom:none;}
+  .row label{
+    font-size:14.5px;
+    color:var(--ink);
+    flex:0 0 auto;
+  }
+  .row .control{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex:1 1 auto;
+    justify-content:flex-end;
+    max-width:340px;
+  }
+  input[type="range"]{
+    flex:1 1 auto;
+    accent-color:var(--teal);
+    height:2px;
+  }
+  input[type="number"]{
+    width:110px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14.5px;
+    text-align:right;
+    padding:6px 8px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .val{
+    font-variant-numeric:tabular-nums;
+    font-size:14.5px;
+    min-width:56px;
+    text-align:right;
+    color:var(--ink-soft);
+  }
+  .hero{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px 28px 26px;
+    margin-bottom:16px;
+  }
+  .hero .label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .hero .num{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(34px, 7vw, 52px);
+    color:var(--brass);
+    letter-spacing:-0.01em;
+    line-height:1;
+  }
+  .hero .sub{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin-top:8px;
+  }
+  .stat-row{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    flex:1 1 200px;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .stat .label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .stat .num{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    font-weight:500;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  th, td{
+    text-align:right;
+    padding:9px 6px;
+    border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums;
+  }
+  th:first-child, td:first-child{text-align:left;}
+  th{
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:12.5px;
+  }
+  svg{width:100%;height:auto;display:block;}
+  .chart-wrap{
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 20px 8px;
+    background:#fff;
+  }
+  .toggle{
+    display:inline-flex;
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .toggle button{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    padding:8px 16px;
+    border:none;
+    background:#fff;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .toggle button.active{
+    background:var(--teal);
+    color:#fff;
+  }
+  .note{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:14px;
+  }
+  footer{
+    border-top:1px solid var(--line);
+    padding-top:20px;
+    margin-top:12px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  @media (max-width:520px){
+    .row{flex-direction:column;align-items:stretch;}
+    .row .control{max-width:none;justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Retirement Ledger</h1>
+    <p>A running account of what retirement costs, in tomorrow's dollars, and what that means for the amount set aside each month.</p>
+  </header>
+
+  <section>
+    <h2>Assumptions</h2>
+    <div class="row">
+      <label for="income">Current annual income</label>
+      <div class="control">
+        <input type="number" id="income" value="105000" step="1000">
+      </div>
+    </div>
+    <div class="row">
+      <label for="years">Years until retirement</label>
+      <div class="control">
+        <input type="range" id="years" min="5" max="45" value="30">
+        <span class="val" id="years-val">30</span>
+      </div>
+    </div>
+    <div class="row">
+      <label for="inflation">Expected inflation</label>
+      <div class="control">
+        <input type="range" id="inflation" min="0" max="6" step="0.1" value="2.5">
+        <span class="val" id="inflation-val">2.5%</span>
+      </div>
+    </div>
+    <div class="row">
+      <label for="returnRate">Expected investment return</label>
+      <div class="control">
+        <input type="range" id="returnRate" min="2" max="11" step="0.5" value="7">
+        <span class="val" id="returnRate-val">7.0%</span>
+      </div>
+    </div>
+    <div class="row">
+      <label for="multiple">Retirement target multiple</label>
+      <div class="control">
+        <input type="range" id="multiple" min="15" max="25" step="1" value="20">
+        <span class="val" id="multiple-val">20×</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it takes</h2>
+    <div class="hero">
+      <div class="label">Monthly savings needed to hit the target</div>
+      <div class="num" id="monthly-out">$0</div>
+      <div class="sub" id="monthly-pct-out"></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">Income in year-<span id="years-label-1">30</span> dollars</div>
+        <div class="num" id="fv-income-out">$0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Retirement target (<span id="multiple-label">20</span>×)</div>
+        <div class="num" id="target-out">$0</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Growth toward the target</h2>
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 700 260" preserveAspectRatio="none"></svg>
+    </div>
+    <p class="note">Monthly contribution compounding at the assumed return, against the inflation-adjusted target above.</p>
+  </section>
+
+  <section>
+    <h2>Sensitivity — 15× to 25×, by return assumption</h2>
+    <table>
+      <thead>
+        <tr><th>Return</th><th>15×</th><th>20×</th><th>25×</th></tr>
+      </thead>
+      <tbody id="sensitivity-body"></tbody>
+    </table>
+    <p class="note">Monthly savings required at each combination, holding inflation fixed at the rate set above.</p>
+  </section>
+
+  <section>
+    <h2>If you're building this with a partner</h2>
+    <div class="row">
+      <label for="savingsRate">Target household savings rate</label>
+      <div class="control">
+        <input type="range" id="savingsRate" min="15" max="50" step="1" value="25">
+        <span class="val" id="savingsRate-val">25%</span>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">Household income needed</div>
+        <div class="num" id="household-income-out">$0</div>
+      </div>
+      <div class="stat">
+        <div class="label">What a partner would need to earn</div>
+        <div class="num" id="partner-income-out">$0</div>
+      </div>
+    </div>
+    <p class="note">Keeps the savings target above at the chosen share of combined gross income, rather than resting entirely on one salary.</p>
+  </section>
+
+  <section>
+    <h2>One child, RESP</h2>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">Monthly contribution to max the grant</div>
+        <div class="num">$208</div>
+      </div>
+      <div class="stat">
+        <div class="label">Annual CESG match (20%)</div>
+        <div class="num">$500</div>
+      </div>
+      <div class="stat">
+        <div class="label">Lifetime grant cap</div>
+        <div class="num">$7,200</div>
+      </div>
+    </div>
+    <p class="note">$2,500/year ($208/month) is the contribution that draws the full Canada Education Savings Grant. Anything beyond that is better placed in a TFSA or non-registered account — there's no additional grant past this amount.</p>
+  </section>
+
+  <footer>
+    All figures are nominal (future) dollars unless stated otherwise, and assume steady contributions and a constant rate of return — real markets don't move in a straight line. Treat this as a planning sketch, not a guarantee.
+  </footer>
+
+</div>
+
+<script>
+function fmt(n){
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function fmtCompact(n){
+  if(n >= 1000000) return '$' + (n/1000000).toFixed(2) + 'M';
+  if(n >= 1000) return '$' + Math.round(n/1000) + 'K';
+  return fmt(n);
+}
+
+function monthlyPaymentFor(target, annualReturnPct, years){
+  const r = annualReturnPct/100/12;
+  const n = years*12;
+  if(r === 0) return target/n;
+  const factor = (Math.pow(1+r, n) - 1) / r;
+  return target/factor;
+}
+
+function computeAll(){
+  const income = parseFloat(document.getElementById('income').value) || 0;
+  const years = parseInt(document.getElementById('years').value);
+  const inflation = parseFloat(document.getElementById('inflation').value);
+  const returnRate = parseFloat(document.getElementById('returnRate').value);
+  const multiple = parseInt(document.getElementById('multiple').value);
+  const savingsRate = parseInt(document.getElementById('savingsRate').value);
+
+  document.getElementById('years-val').textContent = years;
+  document.getElementById('years-label-1').textContent = years;
+  document.getElementById('inflation-val').textContent = inflation.toFixed(1) + '%';
+  document.getElementById('returnRate-val').textContent = returnRate.toFixed(1) + '%';
+  document.getElementById('multiple-val').textContent = multiple + '×';
+  document.getElementById('multiple-label').textContent = multiple;
+  document.getElementById('savingsRate-val').textContent = savingsRate + '%';
+
+  const fvIncome = income * Math.pow(1 + inflation/100, years);
+  const target = fvIncome * multiple;
+  const monthly = monthlyPaymentFor(target, returnRate, years);
+  const monthlyPct = (monthly*12) / income * 100;
+
+  document.getElementById('fv-income-out').textContent = fmt(fvIncome);
+  document.getElementById('target-out').textContent = fmtCompact(target);
+  document.getElementById('monthly-out').textContent = fmt(monthly) + '/mo';
+  document.getElementById('monthly-pct-out').textContent =
+    'That is about ' + monthlyPct.toFixed(0) + '% of current gross income (' + fmt(income/12) + '/mo).';
+
+  // household
+  const householdIncomeNeeded = (monthly*12) / (savingsRate/100);
+  const partnerIncome = Math.max(0, householdIncomeNeeded - income);
+  document.getElementById('household-income-out').textContent = fmt(householdIncomeNeeded);
+  document.getElementById('partner-income-out').textContent = fmt(partnerIncome);
+
+  // sensitivity table
+  const returns = [Math.max(2, returnRate-2), returnRate, returnRate+2];
+  const multiples = [15, 20, 25];
+  const body = document.getElementById('sensitivity-body');
+  body.innerHTML = '';
+  returns.forEach(r => {
+    const tr = document.createElement('tr');
+    let cells = '<td>' + r.toFixed(1) + '%</td>';
+    multiples.forEach(m => {
+      const t = fvIncome * m;
+      const pmt = monthlyPaymentFor(t, r, years);
+      cells += '<td>' + fmt(pmt) + '</td>';
+    });
+    tr.innerHTML = cells;
+    body.appendChild(tr);
+  });
+
+  drawChart(monthly, returnRate, years, target);
+}
+
+function drawChart(monthly, returnRate, years, target){
+  const svg = document.getElementById('chart');
+  const w = 700, h = 260, pad = 36;
+  const r = returnRate/100/12;
+  const n = years*12;
+  let balance = 0;
+  const points = [];
+  for(let m=0; m<=n; m++){
+    points.push(balance);
+    balance = balance*(1+r) + monthly;
+  }
+  const maxVal = Math.max(...points, target);
+  const xStep = (w - pad*2) / n;
+  const scaleY = v => h - pad - (v/maxVal)*(h - pad*2);
+
+  let path = 'M ' + pad + ' ' + scaleY(points[0]).toFixed(1);
+  points.forEach((v,i) => {
+    path += ' L ' + (pad + i*xStep).toFixed(1) + ' ' + scaleY(v).toFixed(1);
+  });
+
+  const targetY = scaleY(target).toFixed(1);
+
+  svg.innerHTML =
+    '<line x1="'+pad+'" y1="'+targetY+'" x2="'+(w-pad)+'" y2="'+targetY+'" stroke="#9C7A2E" stroke-width="1" stroke-dasharray="4 4"/>' +
+    '<text x="'+(w-pad)+'" y="'+(targetY-6)+'" text-anchor="end" font-size="11" fill="#9C7A2E" font-family="IBM Plex Sans, sans-serif">target</text>' +
+    '<path d="'+path+'" fill="none" stroke="#2F5D5C" stroke-width="2"/>' +
+    '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="#C7BFA9" stroke-width="1"/>' +
+    '<text x="'+pad+'" y="'+(h-10)+'" font-size="11" fill="#48586A" font-family="IBM Plex Sans, sans-serif">today</text>' +
+    '<text x="'+(w-pad)+'" y="'+(h-10)+'" text-anchor="end" font-size="11" fill="#48586A" font-family="IBM Plex Sans, sans-serif">year '+years+'</text>';
+}
+
+['income','years','inflation','returnRate','multiple','savingsRate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', computeAll);
+});
+
+computeAll();
+</script>
+</body>
+</html>
